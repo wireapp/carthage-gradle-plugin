@@ -1,0 +1,4 @@
+github "AFNetworking/AFNetworking" "4.0.1"
+github "wireapp/wire-ios-cryptobox" "30.0.0"
+github "wireapp/wire-ios-system" "35.0.0"
+github "wireapp/wire-ios-utilities" "43.1.2"
