@@ -28,48 +28,52 @@ abstract class WirePlugin : Plugin<Project> {
             .extensions
             .create(EXTENSION_NAME, WirePluginExtension::class.java, project)
 
-        pluginManager.withPlugin(MULTIPLATFORM_PLUGIN_NAME) {
+        project.afterEvaluate {
+            pluginManager.withPlugin(MULTIPLATFORM_PLUGIN_NAME) {
 
-            if (pluginManager.hasPlugin(MULTIPLATFORM_PLUGIN_NAME).not()) {
-                logger.error("NONCSAONFASKGASKASKGHJASKGASKJ")
+                if (pluginManager.hasPlugin(MULTIPLATFORM_PLUGIN_NAME).not()) {
+                    logger.error("NONCSAONFASKGASKASKGHJASKGASKJ")
 
-                return@withPlugin
-            }
-            
-            val multiplatformExtension = this@with
-                .extensions
-                .getByName(KOTLIN_PROJECT_EXTENSION_NAME) as KotlinMultiplatformExtension
-
-            project.tasks.register("carthage-clean") {
-                project.buildDir.resolve(Carthage.ROOT_DIR).deleteRecursively()
-            }
-
-            val carthageRunTask = project
-                .tasks
-                .register("carthage-run", CarthageTask::class.java) {
-                    this.tag.set(extension.tag)
-                    this.parameters.set(extension.carthageParameters)
+                    return@withPlugin
                 }
 
-            project.logger.lifecycle("------- Checking Targets ------")
-            project.logger.lifecycle("------- ${multiplatformExtension.supportedTargets().toList()} ------")
+                val multiplatformExtension = this@with
+                    .extensions
+                    .getByName(KOTLIN_PROJECT_EXTENSION_NAME) as KotlinMultiplatformExtension
 
-            multiplatformExtension.supportedTargets().forEach { target ->
-                project.logger.lifecycle("------- Found Target ${target.konanTarget} ------")
-                project
+                project.tasks.register("carthage-clean") {
+                    project.buildDir.resolve(Carthage.ROOT_DIR).deleteRecursively()
+                }
+
+                val carthageRunTask = project
                     .tasks
-                    .register(
-                        "carthage-defgen-${target.konanTarget.architecture}",
-                        GenerateDefTask::class.java
-                    ) {
+                    .register("carthage-run", CarthageTask::class.java) {
                         this.tag.set(extension.tag)
-                        extension.defGeneratorParameters.get().target = target
-                        this.parameters.set(extension.defGeneratorParameters)
-//                    this.dependsOn(carthageRunTask)
+                        this.parameters.set(extension.carthageParameters)
                     }
-            }
 
+                project.logger.lifecycle("------- Checking Targets ------")
+                project.logger.lifecycle("------- ${multiplatformExtension.supportedTargets().toList()} ------")
+
+                multiplatformExtension.supportedTargets().forEach { target ->
+                    project.logger.lifecycle("------- Found Target ${target.konanTarget} ------")
+                    project
+                        .tasks
+                        .register(
+                            "carthage-defgen-${target.konanTarget.architecture}",
+                            GenerateDefTask::class.java
+                        ) {
+                            this.tag.set(extension.tag)
+                            extension.defGeneratorParameters.get().target = target
+                            this.parameters.set(extension.defGeneratorParameters)
+//                    this.dependsOn(carthageRunTask)
+                        }
+                }
+
+            }
         }
+
+
 //
 //        project.tasks.register("carthage-compilation") {
 //
