@@ -44,7 +44,7 @@ object PluginCoordinates {
     const val VERSION = "0.0.1"
 
     const val ID = "$GROUP.$ARTIFACT"
-    const val IMPLEMENTATION_CLASS = "$ID.WirePlugin"
+    const val IMPLEMENTATION_CLASS = "$ID.CarthagePlugin"
 }
 
 publishing {

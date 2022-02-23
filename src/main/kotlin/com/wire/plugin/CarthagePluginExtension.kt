@@ -7,7 +7,7 @@ import org.gradle.api.NamedDomainObjectSet
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
 
-abstract class WirePluginExtension @Inject constructor(val project: Project) {
+abstract class CarthagePluginExtension @Inject constructor(val project: Project) {
 
     private var _dependencies = project.container(CarthageDependency::class.java)
 

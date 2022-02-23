@@ -13,15 +13,15 @@ import org.jetbrains.kotlin.konan.target.KonanTarget
 import java.lang.IllegalStateException
 
 
-const val EXTENSION_NAME = "wire"
+const val EXTENSION_NAME = "carthage"
 
-abstract class WirePlugin : Plugin<Project> {
+abstract class CarthagePlugin : Plugin<Project> {
 
     override fun apply(project: Project) = with(project) {
 
         val extension = project
             .extensions
-            .create(EXTENSION_NAME, WirePluginExtension::class.java, project)
+            .create(EXTENSION_NAME, CarthagePluginExtension::class.java, project)
 
         project.afterEvaluate {
             pluginManager.withPlugin(MULTIPLATFORM_PLUGIN_NAME) {
@@ -74,17 +74,17 @@ abstract class WirePlugin : Plugin<Project> {
     fun createInterops(
         project: Project,
         kotlinExtension: KotlinMultiplatformExtension,
-        wirePluginExtension: WirePluginExtension
+        carthagePluginExtension: CarthagePluginExtension
     ) {
         val carthageRunTask = project
             .tasks
             .register("carthage-run", CarthageTask::class.java) {
-                this.platforms.set(project.provider { wirePluginExtension.platforms })
-                this.command.set(project.provider { wirePluginExtension.command })
+                this.platforms.set(project.provider { carthagePluginExtension.platforms })
+                this.command.set(project.provider { carthagePluginExtension.command })
                 this.useXCFramework.set(project.provider { true })
             }
 
-        wirePluginExtension.dependencies.all { dependency -> Unit
+        carthagePluginExtension.dependencies.all { dependency -> Unit
             val defGenTask = project
                 .tasks
                 .register(
@@ -116,7 +116,7 @@ abstract class WirePlugin : Plugin<Project> {
                 target.binaries {
                     getTest("DEBUG").linkerOpts.add("-F$frameworkDir")
                     framework {
-                        baseName = wirePluginExtension.baseName
+                        baseName = carthagePluginExtension.baseName
                         transitiveExport = true
                         linkerOpts(
                             "-F$frameworkDir"
