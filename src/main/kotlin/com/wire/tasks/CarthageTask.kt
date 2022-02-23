@@ -1,11 +1,12 @@
 package com.wire.tasks
+import com.wire.carthage.models.Carthage
+import com.wire.plugin.CarthageCommand
 import org.gradle.api.DefaultTask
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.options.Option
-import com.wire.plugin.CarthageParameters
+import org.gradle.api.provider.ListProperty
 
 abstract class CarthageTask : DefaultTask() {
 
@@ -15,33 +16,34 @@ abstract class CarthageTask : DefaultTask() {
     }
 
     @get:Input
-    @get:Option(option = "carthageParameters", description = "The set of parameters to run Carthage with")
-    abstract val parameters: Property<CarthageParameters>
+    @get:Option(option = "platforms", description = "The set of platforms which Carthage should build for")
+    abstract val platforms: ListProperty<Carthage.Platform>
 
     @get:Input
-    @get:Option(option = "tag", description = "A Tag to be used for debug")
-    @get:Optional
-    abstract val tag: Property<String>
+    @get:Option(option = "command", description = "The carthage command to execute")
+    abstract val command: Property<CarthageCommand>
+
+    @get:Input
+    @get:Option(option = "useXCFramework", description = "If carthage should build xcframeworks")
+    abstract val useXCFramework: Property<Boolean>
 
     @TaskAction
     fun carthageAction() {
-        val prettyTag = tag.orNull?.let { "[$it]" } ?: ""
-
-        val platforms = parameters.get().platforms.joinToString(" ")
-        logger.lifecycle("$prettyTag carthage invocation: carthage ${parameters.get().command.commandString} --cache-builds --platform $platforms ${if(parameters.get().useXCFrameworks) "--use-xcframeworks" else ""}")
+        val platformList = platforms.get().joinToString(" ")
+        logger.lifecycle("carthage invocation: carthage ${command.get().commandString} --cache-builds --platform $platformList ${if(useXCFramework.get()) "--use-xcframeworks" else ""}")
 
         project.exec {
             this.executable = "carthage"
             this.workingDir = project.projectDir
 
             this.args(mutableListOf<Any?>().apply {
-                add("${parameters.get().command.commandString}")
+                add("${command.get().commandString}")
                 add("--cache-builds")
                 add("--platform")
-                parameters.get().platforms.forEach {
+                platforms.get().forEach {
                     add(it.platformString)
                 }
-                if (parameters.get().useXCFrameworks) {
+                if (useXCFramework.get()) {
                     add("--use-xcframeworks")
                 }
             })

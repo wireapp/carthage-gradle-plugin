@@ -4,23 +4,17 @@ import com.wire.carthage.models.Carthage
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import com.wire.tasks.*
+import java.io.File
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
-import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinMultiplatformPlugin
 import org.jetbrains.kotlin.konan.target.KonanTarget
+import java.lang.IllegalStateException
 
 
 const val EXTENSION_NAME = "wire"
 
 abstract class WirePlugin : Plugin<Project> {
-
-//    internal fun KotlinMultiplatformExtension.supportedTargets() = targets
-//        .withType(KotlinNativeTarget::class.java)
-//        .matching { it.konanTarget.family.isAppleFamily }
-//
-//internal fun KotlinMultiplatformExtension.supportedTargets() = targets
-//    .withType(KotlinNativeTarget::class.java)
-//    .matching { it.konanTarget.family.isAppleFamily }
 
     override fun apply(project: Project) = with(project) {
 
@@ -32,8 +26,7 @@ abstract class WirePlugin : Plugin<Project> {
             pluginManager.withPlugin(MULTIPLATFORM_PLUGIN_NAME) {
 
                 if (pluginManager.hasPlugin(MULTIPLATFORM_PLUGIN_NAME).not()) {
-                    logger.error("NONCSAONFASKGASKASKGHJASKGASKJ")
-
+                    logger.error("Multiplatform plugin not available")
                     return@withPlugin
                 }
 
@@ -45,39 +38,129 @@ abstract class WirePlugin : Plugin<Project> {
                     project.buildDir.resolve(Carthage.ROOT_DIR).deleteRecursively()
                 }
 
-                val carthageRunTask = project
-                    .tasks
-                    .register("carthage-run", CarthageTask::class.java) {
-                        this.tag.set(extension.tag)
-                        this.parameters.set(extension.carthageParameters)
-                    }
-
                 project.logger.lifecycle("------- Checking Targets ------")
                 project.logger.lifecycle("------- ${multiplatformExtension.supportedTargets().toList()} ------")
 
-                multiplatformExtension.supportedTargets().forEach { target ->
-                    project.logger.lifecycle("------- Found Target ${target.konanTarget} ------")
-                    project
-                        .tasks
-                        .register(
-                            "carthage-defgen-${target.konanTarget.architecture}",
-                            GenerateDefTask::class.java
-                        ) {
-                            this.tag.set(extension.tag)
-                            extension.defGeneratorParameters.get().target = target
-                            this.parameters.set(extension.defGeneratorParameters)
-//                    this.dependsOn(carthageRunTask)
-                        }
-                }
-
+                createInterops(project, multiplatformExtension, extension)
             }
         }
+    }
 
+    @OptIn(ExperimentalStdlibApi::class)
+    fun createInterops(
+        project: Project,
+        kotlinExtension: KotlinMultiplatformExtension,
+        wirePluginExtension: WirePluginExtension
+    ) {
+        val carthageRunTask = project
+            .tasks
+            .register("carthage-run", CarthageTask::class.java) {
+                this.platforms.set(project.provider { wirePluginExtension.platforms })
+                this.command.set(project.provider { wirePluginExtension.command })
+                this.useXCFramework.set(project.provider { true })
+            }
 
-//
-//        project.tasks.register("carthage-compilation") {
-//
-//        }
+        wirePluginExtension.dependencies.all { dependency -> Unit
+            val defGenTask = project
+                .tasks
+                .register(
+                    "carthage-defgen-${dependency.moduleName}",
+                    GenerateDefTask::class.java
+                ) {
+                    this.artifactName.set(project.provider { dependency.moduleName })
+                    this.dependsOn(carthageRunTask)
+                }
+
+            kotlinExtension.supportedTargets().all { target -> Unit
+                val (xcFrameworkDir, xcFramework) = framework(project, dependency.moduleName)
+                val libraryIdentifier = targetLibraryIdentifier(project, xcFramework, target)
+
+                val headersDir = xcFrameworkDir.resolve("$libraryIdentifier/${dependency.moduleName}.framework/Headers")
+                val frameworkDir = xcFrameworkDir.resolve("$libraryIdentifier")
+
+                target.compilations.getByName(KotlinCompilation.MAIN_COMPILATION_NAME).cinterops.create(dependency.moduleName) {
+
+                    val interopTask = project.tasks.getByPath(interopProcessingTaskName)
+                    interopTask.dependsOn(defGenTask)
+
+                    packageName =  dependency.packageName
+                    defFileProperty.set(defGenTask.map { it.outputFile})
+                    includeDirs(headersDir)
+                    compilerOpts("-F$frameworkDir")
+                }
+
+                target.binaries {
+                    getTest("DEBUG").linkerOpts.add("-F$frameworkDir")
+                    framework {
+                        baseName = wirePluginExtension.baseName
+                        transitiveExport = true
+                        linkerOpts(
+                            "-F$frameworkDir"
+                        )
+                    }
+                }
+                return@all true
+            }
+        }
+    }
+
+    @OptIn(ExperimentalStdlibApi::class)
+    fun targetLibraryIdentifier(project: Project, xcFramework: Carthage.XCFramework, target: KotlinNativeTarget): String {
+        val tripletResolutionPair = Carthage.resolve(target) ?: throw IllegalStateException()
+        val carthagePlatform = tripletResolutionPair.first
+        val platformVariant = tripletResolutionPair.second
+
+        val libraryIdentifier = xcFramework.availableLibraries.firstOrNull {
+            it.supportedPlatform.lowercase() == carthagePlatform.platformString.lowercase() &&
+                    it.supportedArchitectures.map(String::lowercase).contains(target.konanTarget.architecture.name.lowercase()) &&
+                    (it.supportedPlatformVariant ?: "").lowercase() == platformVariant.variantName.lowercase()
+        }?.identifier ?: run {
+
+            project.logger
+                .error(
+                    "[XCFRAMEWORK] no library supporting triplet " +
+                            carthagePlatform.platformString.lowercase() +
+                            "-" +
+                            target.konanTarget.architecture.name.lowercase() +
+                            formatVariantForLogging(platformVariant)
+                )
+            throw IllegalStateException()
+        }
+
+        return libraryIdentifier
+    }
+
+    fun framework(project: Project, artifactName: String): Pair<File, Carthage.XCFramework> {
+        val buildProducts = deriveBuildProducts(project)
+        val xcFrameworkPair = Carthage
+            .xcFramework(artifactName, inBuildProducts = buildProducts) ?: run {
+            project.logger.error("[XCFRAMERWORK] no .xcframework named ${artifactName} found")
+            throw IllegalStateException()
+        }
+        return xcFrameworkPair
+    }
+
+    fun formatVariantForLogging(variant: PlatformVariant): String {
+        return if (variant.variantName.isNotEmpty()) {
+            "-${variant.variantName}"
+        } else { "-device" }
+    }
+
+    private fun deriveBuildProducts(project: Project): Carthage.BuildProducts {
+        project.logger.info("retrieving carthage build products")
+        val buildProducts = Carthage.buildProducts(project.projectDir)
+        project.logger.info("found the following build products")
+
+        buildProducts.xcFrameworksPaths.forEach {
+            project.logger.info("[XCFRAMEWORK] $it")
+        }
+
+        buildProducts.frameworksByPlatformPaths.forEach {
+            it.value.forEach { frameworkPath ->
+                project.logger.info("[FRAMEWORK][${it.key.platformString}] $frameworkPath")
+            }
+        }
+        return buildProducts
     }
 }
 

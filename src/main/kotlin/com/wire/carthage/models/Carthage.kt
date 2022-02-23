@@ -1,10 +1,10 @@
 package com.wire.carthage.models
 
-import org.gradle.internal.impldep.com.dd.plist.NSArray
-import org.gradle.internal.impldep.com.dd.plist.NSDictionary
-import org.gradle.internal.impldep.com.dd.plist.NSObject
 import java.io.File
-import org.gradle.internal.impldep.com.dd.plist.PropertyListParser
+import com.dd.plist.PropertyListParser
+import com.dd.plist.NSArray
+import com.dd.plist.NSDictionary
+import com.dd.plist.NSObject
 
 sealed class Carthage {
 
@@ -114,6 +114,7 @@ sealed class Carthage {
                     ?.array
                     ?.toList()
                     ?.map { it.toString() }
+                    ?.map { if (it == "x86_64") "x64" else it }
 
                 val supportedPlatform = nsDictionary?.objectForKey(KEY_XC_SUPPORTED_PLATFORM)?.toString()
                 val supportedPlatformVariant = nsDictionary?.objectForKey(KEY_XC_SUPPORTED_PLATFORM_VARIANT)?.toString()
