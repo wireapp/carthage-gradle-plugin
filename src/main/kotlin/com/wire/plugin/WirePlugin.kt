@@ -4,6 +4,7 @@ import com.wire.carthage.models.Carthage
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import com.wire.tasks.*
+import org.gradle.api.tasks.Copy
 import java.io.File
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
@@ -42,6 +43,29 @@ abstract class WirePlugin : Plugin<Project> {
                 project.logger.lifecycle("------- ${multiplatformExtension.supportedTargets().toList()} ------")
 
                 createInterops(project, multiplatformExtension, extension)
+                createCopyFrameworksTasks(project, multiplatformExtension)
+            }
+        }
+    }
+
+    fun createCopyFrameworksTasks(
+        project: Project,
+        kotlinExtension: KotlinMultiplatformExtension
+    ) {
+        val buildProducts = deriveBuildProducts(project)
+
+        kotlinExtension.supportedTargets().all { target ->
+            val frameworks = Carthage.xcFrameworks(buildProducts)
+            val targetFrameworks = frameworks.map { it.first.resolve(targetLibraryIdentifier(project, it.second, target)) }
+
+            target.binaries.all { binary ->
+                val copyFrameworksTask = project.tasks.register("copy-carthage-frameworks-${target.name}-${binary.name}", Copy::class.java) {
+                    from(targetFrameworks)
+                    into(binary.outputDirectory.resolve("Frameworks"))
+                }
+
+                binary.linkTask.dependsOn(copyFrameworksTask)
+                return@all true
             }
         }
     }

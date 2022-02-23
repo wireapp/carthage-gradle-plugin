@@ -167,6 +167,16 @@ sealed class Carthage {
         }
 
         /**
+         * @param inBuildProducts the build products in `Carthage/Build`
+         */
+        fun xcFrameworks(inBuildProducts: BuildProducts): List<Pair<File, XCFramework>> {
+            return inBuildProducts
+                .xcFrameworksPaths
+                .map { File(it) }
+                .map { Pair(it, xcFrameworkFromPlist(it.resolve("Info.plist"))!!) }
+        }
+
+        /**
          * @param named The name of the framework **without** the extension
          * @param forPlatform The `Carthage.Platform` to restrict the search to
          * @param inBuildProducts the build products in `Carthage/Build`
