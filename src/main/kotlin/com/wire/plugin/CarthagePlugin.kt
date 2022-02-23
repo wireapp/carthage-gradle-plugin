@@ -39,9 +39,6 @@ abstract class CarthagePlugin : Plugin<Project> {
                     project.buildDir.resolve(Carthage.ROOT_DIR).deleteRecursively()
                 }
 
-                project.logger.lifecycle("------- Checking Targets ------")
-                project.logger.lifecycle("------- ${multiplatformExtension.supportedTargets().toList()} ------")
-
                 createInterops(project, multiplatformExtension, extension)
                 createCopyFrameworksTasks(project, multiplatformExtension)
             }

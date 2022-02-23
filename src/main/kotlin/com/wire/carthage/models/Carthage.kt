@@ -45,6 +45,9 @@ sealed class Carthage {
         const val FRAMEWORK =  "framework"
         const val XCFRAMEWORK = "xc$FRAMEWORK"
 
+        private const val X86_64_ARCH = "x86_64"
+        private const val X86_64_ARCH_GRADLE = "x64"
+
         private const val KEY_XC_AVAILABLE_LIBRARIES = "AvailableLibraries"
 
         private const val KEY_XC_DEBUG_SYMBOLS_PATH = "DebugSymbolsPath"
@@ -114,7 +117,7 @@ sealed class Carthage {
                     ?.array
                     ?.toList()
                     ?.map { it.toString() }
-                    ?.map { if (it == "x86_64") "x64" else it }
+                    ?.map { if (it == X86_64_ARCH) X86_64_ARCH_GRADLE else it }
 
                 val supportedPlatform = nsDictionary?.objectForKey(KEY_XC_SUPPORTED_PLATFORM)?.toString()
                 val supportedPlatformVariant = nsDictionary?.objectForKey(KEY_XC_SUPPORTED_PLATFORM_VARIANT)?.toString()
