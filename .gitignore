@@ -45,3 +45,6 @@ replay_pid*
 # Gradle files
 .gradle/
 build/
+
+# Carthage
+Carthage
