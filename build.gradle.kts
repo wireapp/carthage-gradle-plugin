@@ -25,6 +25,14 @@ dependencies {
 
 tasks.getByName<Test>("test") {
     useJUnitPlatform()
+
+    val runCarthage = project.tasks.register("run carthage", Exec::class.java) {
+        commandLine("carthage", "bootstrap", "--platform", "ios", "--use-xcframeworks")
+        inputs.file(project.projectDir.resolve("Cartfile"))
+        outputs.dir(project.projectDir.resolve("Carthage"))
+    }
+
+    this.dependsOn(runCarthage)
 }
 
 gradlePlugin {

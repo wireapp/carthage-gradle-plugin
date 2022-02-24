@@ -10,12 +10,13 @@ internal class CarthageTest {
     fun `test that products found in carthage build directory as classified correctly in BuildProducts`() {
 
         // GIVEN
-        val resourceFolder = File("src/test/resources")
+        val resourceFolder =  File(".")
 
         val xcFrameworkPaths = listOf(
             resourceFolder.resolve(Carthage.BUILD_DIR).resolve("AFNetworking.xcframework"),
             resourceFolder.resolve(Carthage.BUILD_DIR).resolve("WireUtilities.xcframework"),
             resourceFolder.resolve(Carthage.BUILD_DIR).resolve("WireCryptobox.xcframework"),
+            resourceFolder.resolve(Carthage.BUILD_DIR).resolve("WireSystem.xcframework"),
         ).map { it.path }
 
         val frameworkPaths = listOf(
@@ -30,7 +31,7 @@ internal class CarthageTest {
             hashMapOf(
                 Pair(Carthage.Platform.MACOS, listOf()),
                 Pair(Carthage.Platform.WATCHOS, listOf()),
-                Pair(Carthage.Platform.IOS, frameworkPaths),
+                Pair(Carthage.Platform.IOS, listOf()),
                 Pair(Carthage.Platform.TVOS, listOf())
             )
         )
@@ -48,7 +49,7 @@ internal class CarthageTest {
     @Test
     fun `test that parsing an xcframework from a valid plist file succeeds`() {
         // GIVEN
-        val plist = File("src/test/resources")
+        val plist = File(".")
             .resolve(Carthage.BUILD_DIR)
             .resolve("AFNetworking.xcframework")
             .resolve("Info.plist")
@@ -59,7 +60,7 @@ internal class CarthageTest {
                 path = "AFNetworking.framework",
                 supportedPlatform = "ios",
                 supportedPlatformVariant = "simulator",
-                supportedArchitectures = listOf("arm64", "i386", "x86_64"),
+                supportedArchitectures = listOf("arm64", "i386", "x64"),
                 debugSymbolsPath = "dSYMs"
             ),
             Carthage.XCFramework.Library(
@@ -106,7 +107,7 @@ internal class CarthageTest {
     @Test
     fun `test that retrieving an existing framework succeeds`() {
         // GIVEN
-        val resourceFolder = File("src/test/resources")
+        val resourceFolder = File(".")
 
         val knownValidFramework = resourceFolder
             .resolve(Carthage.BUILD_DIR)
