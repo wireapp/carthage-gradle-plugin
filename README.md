@@ -28,4 +28,4 @@ ios() {
 }
 
 ```
-4. The dependency will exposed as `carthage.AFNetworking` by default.
+4. The dependency will be exposed as `carthage.AFNetworking` by default.
