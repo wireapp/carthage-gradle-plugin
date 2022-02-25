@@ -1,2 +1,2 @@
-rootProject.name = "wire-gradle-plugin"
+rootProject.name = "carthage-gradle-plugin"
 

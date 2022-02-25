@@ -48,11 +48,11 @@ gradlePlugin {
 object PluginCoordinates {
 
     const val GROUP = "com.wire"
-    const val ARTIFACT = "plugin"
+    const val ARTIFACT = "carthage-plugin"
     const val VERSION = "0.0.1"
 
     const val ID = "$GROUP.$ARTIFACT"
-    const val IMPLEMENTATION_CLASS = "$ID.CarthagePlugin"
+    const val IMPLEMENTATION_CLASS = "com.wire.plugin.CarthagePlugin"
 }
 
 publishing {
