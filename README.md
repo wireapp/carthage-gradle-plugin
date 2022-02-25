@@ -12,13 +12,13 @@ No license is granted to the Wire trademark and its associated logos, all of whi
 
 ## Description
 
-Adds support for integrating iOS Carthage dependencies into a KMM project.
+Adds support for integrating [Carthage](https://github.com/Carthage/Carthage) dependencies into a KMM project.
 
 ## Usage
 
 1. Install the [Carthage build tool](https://github.com/Carthage/Carthage).
 2. Create a `Cartfile` with the desired dependencies in the project root.
-3. Add a `carthage` entry for your iOS target in the gradle file:
+3. Add a `carthage` entry for your target in the gradle file, for example:
 
 ```
 ios() {
