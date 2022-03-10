@@ -29,3 +29,23 @@ ios() {
 
 ```
 4. The dependency will be exposed as `carthage.AFNetworking` by default.
+
+## Publishing to [wire-maven](https://github.com/wireapp/wire-maven)
+
+To publish the plugin for internal consumption (e.g. in [kalium](https://github.com/wireapp/wire-maven)),
+checkout [wire-maven](https://github.com/wireapp/wire-maven) side by side with this repository:
+
+```
+.
+├─ carthage-gradle-pluging/
+├─ wire-maven/
+```
+
+then:
+
+- create a new branch in wire-maven with pattern `chore/carthage-gradle-plugin/vX.Y.Z`
+- run the `publish` task in `carthage-gradle-plugin` to generate the plugin's `.jar`
+- commit with message following the pattern `chore: add carthage-gradle-plugin vX.Y.Z`
+- create a pull request in wire-maven 
+
+Once the resulting pull request is merged in wire-maven a new version will be avalable for consumption.
