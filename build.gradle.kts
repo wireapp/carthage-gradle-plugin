@@ -48,7 +48,7 @@ gradlePlugin {
 object PluginCoordinates {
 
     const val GROUP = "com.wire"
-    const val ARTIFACT = "carthage-plugin"
+    const val ARTIFACT = "carthage-gradle-plugin"
     const val VERSION = "0.0.1"
 
     const val ID = "$GROUP.$ARTIFACT"
@@ -58,7 +58,7 @@ object PluginCoordinates {
 publishing {
     repositories {
         maven {
-            url = uri("../local-maven/")
+            url = uri("../wire-maven/releases")
         }
     }
 }
