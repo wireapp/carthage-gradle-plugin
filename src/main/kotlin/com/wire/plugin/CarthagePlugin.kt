@@ -4,11 +4,14 @@ import com.wire.carthage.models.Carthage
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import com.wire.tasks.*
+import org.gradle.api.Task
+import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.tasks.Copy
 import java.io.File
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.dsl.kotlinExtension
 import org.jetbrains.kotlin.konan.target.KonanTarget
 import java.lang.IllegalStateException
 
@@ -41,7 +44,56 @@ abstract class CarthagePlugin : Plugin<Project> {
 
                 createInterops(project, multiplatformExtension, extension)
                 createCopyFrameworksTasks(project, multiplatformExtension)
+                configureLinkerOptionsInDependencies(project, multiplatformExtension)
             }
+        }
+    }
+
+    // WIP
+    fun configureLinkerOptionsInDependencies(project: Project, kotlinExtension: KotlinMultiplatformExtension): Unit {
+        for (subproject in project.rootProject.subprojects.filter { it != project }) {
+            project.afterEvaluate {
+                subproject.configurations.all {
+                    this.dependencies.all {
+                        if (this is ProjectDependency) {
+                            println("dependencyProject: ${this.dependencyProject}")
+
+                            if (this.dependencyProject == project) {
+                                configureLinkerOptions(subproject, kotlinExtension)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // WIP
+    fun configureLinkerOptions(project: Project, kotlinExtension: KotlinMultiplatformExtension) {
+        println("configuring project: $project")
+
+        project.kotlinExtension
+
+        val multiplatformExtension = project
+            .extensions
+            .getByName(KOTLIN_PROJECT_EXTENSION_NAME) as KotlinMultiplatformExtension
+
+        multiplatformExtension.supportedTargets().all { target ->
+            Unit
+
+            println("target: $target")
+            target.binaries {
+                getTest("DEBUG").apply {
+                    val frameworkDir = project.rootProject.projectDir.resolve("cryptography/Carthage/Build/WireCryptobox.xcframework/ios-x86_64-simulator")
+                    println("Current linkerOpts: $linkerOpts")
+                    println("Adding linking flag: -F$frameworkDir")
+
+                    linkerOpts(
+                        "-F${frameworkDir}"
+                    )
+                }
+            }
+            return@all true
         }
     }
 
