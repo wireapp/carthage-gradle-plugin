@@ -37,7 +37,7 @@ checkout [wire-maven](https://github.com/wireapp/wire-maven) side by side with t
 
 ```
 .
-├─ carthage-gradle-pluging/
+├─ carthage-gradle-plugin/
 ├─ wire-maven/
 ```
 
